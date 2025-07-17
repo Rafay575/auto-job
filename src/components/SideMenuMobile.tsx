@@ -8,6 +8,9 @@ import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import MenuButton from './MenuButton';
 import MenuContent from './MenuContent';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice'; // import the logout action
+import { useNavigate } from 'react-router-dom'; // import useNavigate for redirection
 
 interface SideMenuMobileProps {
   open: boolean | undefined;
@@ -15,6 +18,17 @@ interface SideMenuMobileProps {
 }
 
 export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobileProps) {
+  const dispatch = useDispatch(); // Use dispatch to call logout action
+  const navigate = useNavigate(); // Use navigate for redirecting
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    dispatch(logout());
+
+    // Redirect to homepage
+    navigate('/');
+  };
+
   return (
     <Drawer
       anchor="right"
@@ -58,9 +72,14 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
           <MenuContent />
           <Divider />
         </Stack>
-     
+
         <Stack sx={{ p: 2 }}>
-          <Button variant="outlined" fullWidth startIcon={<LogoutRoundedIcon />}>
+          <Button 
+            variant="outlined" 
+            fullWidth 
+            startIcon={<LogoutRoundedIcon />} 
+            onClick={() => handleLogout}  // Add onClick handler for logout
+          >
             Logout
           </Button>
         </Stack>

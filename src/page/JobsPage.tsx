@@ -1,10 +1,4 @@
-import type {} from '@mui/x-date-pickers/themeAugmentation';
-import type {} from '@mui/x-charts/themeAugmentation';
-import type {} from '@mui/x-data-grid-pro/themeAugmentation';
-import type {} from '@mui/x-tree-view/themeAugmentation';
-import { alpha } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Stack,
@@ -15,14 +9,19 @@ import {
   Pagination,
   Select,
   FormControl,
-  
+  CssBaseline,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+
 import AppNavbar from '../components/AppNavbar';
 import SideMenu from '../components/SideMenu';
 import AppTheme from '../theme/AppTheme';
-import JobsList from '../components/JobsList';
 import Header from '../components/Header';
+import JobsCardList from '../components/JobsList';
+
+import { alpha } from '@mui/material/styles';
+import { jobs, type Job } from '../data/dummy_jobs';
+
 import {
   chartsCustomizations,
   dataGridCustomizations,
@@ -42,13 +41,30 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
+  const filteredJobs = jobs.filter((job) =>
+    job.title.toLowerCase().includes(search.toLowerCase()) ||
+    job.company.toLowerCase().includes(search.toLowerCase()) ||
+    job.location.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredJobs.length / entriesPerPage);
+  const paginatedJobs = filteredJobs.slice(
+    (page - 1) * entriesPerPage,
+    page * entriesPerPage
+  );
+
+  // Reset to page 1 when search or entriesPerPage changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, entriesPerPage]);
+
   return (
     <AppTheme {...props} themeComponents={xThemeComponents2}>
       <CssBaseline enableColorScheme />
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />
-        {/* Main content */}
+
         <Box
           component="main"
           sx={(theme) => ({
@@ -70,7 +86,7 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
           >
             <Header />
 
-            {/* Jobs Section Header */}
+            {/* Top Bar: Search and Entries */}
             <Box
               sx={{
                 display: 'flex',
@@ -86,11 +102,10 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
 
               <Stack direction="row" spacing={2} alignItems="center">
                 <FormControl size="small">
-                  <label id="entries-label">Entries</label>
+                 
                   <Select
                     labelId="entries-label"
                     value={entriesPerPage}
-                    label="Entries"
                     onChange={(e) => setEntriesPerPage(Number(e.target.value))}
                   >
                     {[5, 10, 25, 50].map((value) => (
@@ -117,10 +132,10 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
               </Stack>
             </Box>
 
-            {/* Jobs List */}
-            <JobsList />
+            {/* Render Filtered + Paginated Jobs */}
+            <JobsCardList jobs={paginatedJobs} />
 
-            {/* Pagination Controls */}
+            {/* Pagination and Count */}
             <Box
               sx={{
                 display: 'flex',
@@ -131,11 +146,12 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
             >
               <Typography variant="body2" color="text.secondary">
                 Showing {(page - 1) * entriesPerPage + 1} to{' '}
-                {page * entriesPerPage} of 100 entries
+                {Math.min(page * entriesPerPage, filteredJobs.length)} of{' '}
+                {filteredJobs.length} entries
               </Typography>
 
               <Pagination
-                count={10}
+                count={totalPages}
                 page={page}
                 onChange={(_, value) => setPage(value)}
                 shape="rounded"

@@ -10,6 +10,9 @@ import ListItemIcon, { listItemIconClasses } from '@mui/material/ListItemIcon';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import MenuButton from './MenuButton';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice'; // import the logout action
 
 const MenuItem = styled(MuiMenuItem)({
   margin: '2px 0',
@@ -18,12 +21,25 @@ const MenuItem = styled(MuiMenuItem)({
 export default function OptionsMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
+  const dispatch = useDispatch(); // To dispatch the logout action
+
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const handleLogout = () => {
+    // Dispatch logout action from Redux
+    
+    // Redirect to homepage after logout
+    navigate('/');
+    dispatch(logout());
+  };
+
   return (
     <React.Fragment>
       <MenuButton
@@ -53,14 +69,11 @@ export default function OptionsMenu() {
           },
         }}
       >
-        <MenuItem onClick={handleClose}>Profile</MenuItem>
-     
-       
-
-        <MenuItem onClick={handleClose}>Account Settings</MenuItem>
+        <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
+        <MenuItem onClick={() => navigate('/account-settings')}>Account Settings</MenuItem>
         <Divider />
         <MenuItem
-          onClick={handleClose}
+          onClick={handleLogout} // Logout action on click
           sx={{
             [`& .${listItemIconClasses.root}`]: {
               ml: 'auto',

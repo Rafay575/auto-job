@@ -9,15 +9,22 @@ import Stack from '@mui/material/Stack';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
+import { useAppSelector } from '../redux/hooks'; // adjust path as needed
 
-const mainListItems = [
+
+export default function MenuContent() {
+  const location = useLocation();
+const user = useAppSelector((state) => state.auth.user);
+const userType = user?.user_type; // 0 = regular user, 1 = admin
+const allMenuItems = [
   { text: 'Home',  icon: <HomeRoundedIcon />,      path: '/dashboard' },
   { text: 'Jobs',  icon: <AnalyticsRoundedIcon />, path: '/jobs' },
   { text: 'Users', icon: <PeopleRoundedIcon />,    path: '/users' },
 ];
 
-export default function MenuContent() {
-  const location = useLocation();
+const mainListItems = userType === 0
+  ? allMenuItems.filter(item => item.text === 'Jobs')
+  : allMenuItems;
 
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: 'space-between' }}>

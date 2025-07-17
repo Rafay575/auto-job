@@ -1,4 +1,3 @@
-// src/components/JobsCardList.tsx
 import {
   Box,
   Stack,
@@ -13,52 +12,34 @@ import {
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BusinessIcon from '@mui/icons-material/Business';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart } from '../redux/cartSlice';
+import type { Job } from '../data/dummy_jobs';
+import type { RootState } from '../redux/store'; // Make sure this points to your store file
 
-interface Job {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  description?: string;
-}
-
-const jobs: Job[] = [
-  {
-    id: 1,
-    title: 'Software Engineer',
-    company: 'Acme Corp',
-    location: 'Remote',
-    description: 'Build and maintain scalable web applications using modern tools like React, Node.js, and GraphQL.',
-  },
-  {
-    id: 2,
-    title: 'Product Manager',
-    company: 'Beta Inc',
-    location: 'New York',
-    description: 'Drive product strategy, roadmap, and feature development from ideation to launch.',
-  },
-  {
-    id: 3,
-    title: 'UI Designer',
-    company: 'Gamma LLC',
-    location: 'San Francisco',
-    description: 'Create visually appealing and user-friendly interfaces for both web and mobile platforms.',
-  },
-];
-
-const getInitials = (company: string) => {
-  return company
+const getInitials = (company: string) =>
+  company
     .split(' ')
-    .map(word => word[0])
+    .map((w) => w[0])
     .join('')
     .toUpperCase();
-};
 
-export default function JobsCardList() {
+export default function JobsCardList({ jobs }: { jobs: Job[] }) {
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+
+  const handleApply = (job: Job, applyType: 'AI' | 'Smart' | 'Manual') => {
+    dispatch(addToCart({ job, applyType }));
+  };
+
+  const isJobInCart = (jobId: number): boolean => {
+    return cartItems.some((item) => item.job.id === jobId);
+  };
+
   return (
-    <Box sx={{ width: '100%', p: { xs: 2, md: 4 },  mx: 'auto' }}>
+    <Box sx={{ width: '100%', p: { xs: 2, md: 4 }, mx: 'auto' }}>
       <Stack spacing={3}>
-        {jobs.map(job => (
+        {jobs.map((job) => (
           <Card
             key={job.id}
             variant="outlined"
@@ -107,13 +88,49 @@ export default function JobsCardList() {
               )}
             </CardContent>
 
-            <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
-              <Button size="small" variant="outlined">
-                View Details
-              </Button>
-              <Button size="small" variant="contained">
-                Apply Now
-              </Button>
+            <CardActions
+              sx={{
+                justifyContent: 'flex-end',
+                px: 2,
+                pb: 2,
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              {isJobInCart(job.id) ? (
+                <Chip
+                  label="✅ Added to Cart"
+                  color="success"
+                  variant="outlined"
+                  sx={{ fontWeight: 'bold' }}
+                />
+              ) : (
+                <>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleApply(job, 'AI')}
+                  >
+                    AI Quick Apply
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleApply(job, 'Smart')}
+                  >
+                    Smart Apply
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleApply(job, 'Manual')}
+                  >
+                    Manual Apply
+                  </Button>
+                </>
+              )}
             </CardActions>
           </Card>
         ))}
