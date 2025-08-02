@@ -1,182 +1,110 @@
-// src/components/UsersList.tsx
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
-import IconButton from '@mui/material/IconButton';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import  { useEffect, useState } from 'react';
 import {
   DataGrid,
   type GridColDef,
   type GridPaginationModel,
   type GridRenderCellParams,
 } from '@mui/x-data-grid';
+import { Box, IconButton } from '@mui/material';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { baseUrl } from '../api/baseUrl';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
-interface ApplicationRow {
+dayjs.extend(utc);
+dayjs.extend(timezone);
+interface UserRow {
   id: number;
   username: string;
-  firstName: string;
-  lastName: string;
   email: string;
-  appliedPosition: string;
-  fromDate: string;
-  toDate: string;
-  resumeLink: string;
-  status: string;
-  package: string;
+  phone: string;
+  created_at: string;
+  user_type: number;
 }
 
-const columns: GridColDef<ApplicationRow>[] = [
-  {
-    field: 'username',
-    headerName: 'Username',
-    flex: 1,
-    minWidth: 120,
-  },
-  {
-    field: 'package',
-    headerName: 'Package Subscribed',
-    flex: 1.2,
-    minWidth: 160,
-  },
-  {
-    field: 'fromDate',
-    headerName: 'From',
-    flex: 1,
-    minWidth: 120,
-    valueFormatter: ({ value }) =>
-      new Date(value as string).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }),
-  },
-  {
-    field: 'toDate',
-    headerName: 'To',
-    flex: 1,
-    minWidth: 120,
-    valueFormatter: ({ value }) =>
-      new Date(value as string).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }),
-  },
-  {
-    field: 'appliedPosition',
-    headerName: 'Position',
-    flex: 1.2,
-    minWidth: 150,
-  },
-  {
-    field: 'email',
-    headerName: 'Email',
-    flex: 1.5,
-    minWidth: 180,
-  },
-  {
-    field: 'resumeLink',
-    headerName: 'Resume',
-    flex: 1.3,
-    minWidth: 150,
-    renderCell: (params: GridRenderCellParams<ApplicationRow>) => (
-      <Link href={params.value} target="_blank" underline="hover">
-        Download
-      </Link>
-    ),
-  },
-  {
-    field: 'status',
-    headerName: 'Status',
-    flex: 1,
-    minWidth: 100,
-  },
-  {
-    field: 'actions',
-    headerName: 'Actions',
-    flex: 1,
-    minWidth: 120,
-    sortable: false,
-    filterable: false,
-    renderCell: (params: GridRenderCellParams<ApplicationRow>) => (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 1,
-          alignItems: 'center',
-          height: '100%',
-        }}
-      >
-        <IconButton size="small" onClick={() => console.log('Edit', params.row.id)}>
-          <EditRoundedIcon fontSize="inherit" />
-        </IconButton>
-        <IconButton size="small" onClick={() => console.log('Delete', params.row.id)}>
-          <DeleteRoundedIcon fontSize="inherit" />
-        </IconButton>
-      </Box>
-    ),
-  },
-];
-
-const rows: ApplicationRow[] = [
-  {
-    id: 1,
-    username: 'jdoe',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    appliedPosition: 'Software Engineer',
-    fromDate: '2025-07-01',
-    toDate: '2025-12-31',
-    resumeLink: '/resumes/jdoe_se.pdf',
-    status: 'Pending',
-    package: 'Premium',
-  },
-  {
-    id: 2,
-    username: 'asmith',
-    firstName: 'Alice',
-    lastName: 'Smith',
-    email: 'alice.smith@example.com',
-    appliedPosition: 'Frontend Developer',
-    fromDate: '2025-06-01',
-    toDate: '2025-11-30',
-    resumeLink: '/resumes/asmith_fd.pdf',
-    status: 'Approved',
-    package: 'Standard',
-  },
-  {
-    id: 3,
-    username: 'bwayne',
-    firstName: 'Bruce',
-    lastName: 'Wayne',
-    email: 'bruce.wayne@example.com',
-    appliedPosition: 'UI Designer',
-    fromDate: '2025-08-01',
-    toDate: '2026-01-31',
-    resumeLink: '/resumes/bwayne_ui.pdf',
-    status: 'Reviewed',
-    package: 'Basic',
-  },
-];
-
-export default function UsersList() {
-  const [paginationModel, setPaginationModel] = React.useState<GridPaginationModel>({
+export default function UsersList({ search }: { search: string }) {
+  const token = useSelector((state: any) => state.auth.token);
+  const [rows, setRows] = useState<UserRow[]>([]);
+  const [rowCount, setRowCount] = useState(0);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
+
+  const fetchUsers = async () => {
+    const { page, pageSize } = paginationModel;
+    try {
+      const res = await axios.get(`${baseUrl}/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          page: page + 1, // API expects 1-based index
+          limit: pageSize,
+          search,
+        },
+      });
+      if (res.data.success) {
+        setRows(res.data.data);
+        setRowCount(res.data.total);
+      }
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [paginationModel, search]);
+
+  const { page, pageSize } = paginationModel;
+
+  const columns: GridColDef<UserRow>[] = [
+    {
+      field: 'sr',
+      headerName: 'SR #',
+      width: 80,
+      sortable: false,
+      valueGetter: (_params) => '', // We'll render SR manually
+      renderCell: (_params) => (page * pageSize) + _params.api.getRowIndexRelativeToVisibleRows(_params.id) + 1,
+    },
+    { field: 'username', headerName: 'Name', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1.5 },
+    { field: 'phone', headerName: 'Phone', flex: 1 },
+
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<UserRow>) => (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center',height: '100%'}}>
+          <IconButton sx={{ width: '32px', height: '32px'  }} onClick={() => console.log('Edit', params.row.id)}>
+<EditRoundedIcon sx={{ fontSize: '14px' }} />
+
+          </IconButton>
+          <IconButton sx={{ width: '32px', height: '32px'  }} onClick={() => console.log('Delete', params.row.id)}>
+            <DeleteRoundedIcon sx={{ fontSize: '14px' }} />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
 
   return (
     <Box sx={{ height: 600, width: '100%' }}>
       <DataGrid
         rows={rows}
         columns={columns}
-        pagination
+        rowCount={rowCount}
+        paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[5, 10, 20]}
+        pageSizeOptions={[5, 10, 25, 50]}
         disableRowSelectionOnClick
       />
     </Box>

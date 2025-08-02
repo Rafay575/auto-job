@@ -1,4 +1,3 @@
-import  { useState, useEffect } from 'react';
 import {
   Box,
   Stack,
@@ -10,8 +9,8 @@ import AppNavbar from '../components/AppNavbar';
 import SideMenu from '../components/SideMenu';
 import AppTheme from '../theme/AppTheme';
 import Header from '../components/Header';
+import {alpha} from '@mui/material/styles';
 
-import { jobs, type Job } from '../data/dummy_jobs';
 import AccountComponent from '../components/AccountComponent';
 import {
   chartsCustomizations,
@@ -28,20 +27,7 @@ const xThemeComponents2 = {
 };
 
 export default function JobsPage(props: { disableCustomTheme?: boolean }) {
-  const [search, setSearch] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [page, setPage] = useState(1);
-
-  const filteredJobs = jobs.filter((job) =>
-    job.title.toLowerCase().includes(search.toLowerCase()) ||
-    job.company.toLowerCase().includes(search.toLowerCase()) ||
-    job.location.toLowerCase().includes(search.toLowerCase())
-  );
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, entriesPerPage]);
-
+ 
   return (
     <AppTheme {...props} themeComponents={xThemeComponents2}>
       <CssBaseline enableColorScheme />

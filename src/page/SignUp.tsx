@@ -78,10 +78,15 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
       showSnackbar('Please enter a valid email address.', 'error');
       isValid = false;
     }
-    if (!password || password.length < 6) {
-      showSnackbar('Password must be at least 6 characters long.', 'error');
-      isValid = false;
-    }
+   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()[\]{}\-_+=~`|:;"'<>,.?/\\]).{8,}$/;
+
+if (!password || !passwordRegex.test(password)) {
+  showSnackbar(
+    'Password must be at least 8 characters long and include one lowercase, one uppercase letter, and one special character.',
+    'error'
+  );
+  isValid = false;
+}
     if (!name || name.trim().length < 1) {
       showSnackbar('Name is required.', 'error');
       isValid = false;
@@ -108,6 +113,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
         user,
         { withCredentials: true }
       );
+      console.log(res.data);
       showSnackbar('Signup successful!', 'success');
       navigate('/sign-in');
     } catch (error: any) {

@@ -106,7 +106,7 @@ function OTP({
   };
 
   const handleClick = (
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    _event: React.MouseEvent<HTMLDivElement, MouseEvent>,
     currentIndex: number,
   ) => {
     selectInput(currentIndex);

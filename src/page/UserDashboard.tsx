@@ -1,0 +1,240 @@
+// src/pages/HomePage.tsx
+import  { useState, useEffect } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  Avatar,
+  Button,
+  CssBaseline,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+
+
+} from "@mui/material";
+import WorkIcon from "@mui/icons-material/Work";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import axios from "axios";
+import { baseUrl } from '../api/baseUrl';
+import { API_URL } from "../api/baseUrl";
+import SideMenu from "../components/SideMenu";
+import AppNavbar from "../components/AppNavbar";
+import AppTheme from "../theme/AppTheme";
+import Header from "../components/Header";
+import { useSelector } from "react-redux";
+import type { RootState } from "../redux/store";
+import { useNavigate } from "react-router-dom";
+import {
+  chartsCustomizations,
+  dataGridCustomizations,
+  datePickersCustomizations,
+  treeViewCustomizations,
+} from "../theme/customizations";
+
+interface Stats {
+  totalJobs: number;
+  pendingCount: number;
+  appliedCount: number;
+  totalSpending: string;
+}
+
+interface PaymentItem {
+  id: number;
+  amount: number;
+  currency: string;
+  status: string;
+  created_at: string;
+}
+
+export default function HomePage(props: { disableCustomTheme?: boolean }) {
+ 
+  const { user, token } = useSelector((state: RootState) => state.auth);
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<Stats>({
+    totalJobs: 0,
+    pendingCount: 0,
+    appliedCount: 0,
+    totalSpending: "0.00",
+  });
+  const [payments, setPayments] = useState<PaymentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    axios
+      .get(`${baseUrl}/dashboard`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      .then((res) => {
+        if (res.data.success) {
+          setStats(res.data.data.stats);
+          setPayments(res.data.data.payments);
+        }
+      })
+      .catch((err) => {
+        console.error("Dashboard load failed", err);
+      })
+      .finally(() => setLoading(false));
+  }, [user, token]);
+
+  const cardStats = [
+    {
+      label: "Jobs",
+      value: stats.totalJobs,
+      icon: <WorkIcon fontSize="large" color="primary" />,
+    },
+    {
+      label: "Pending Applications",
+      value: stats.pendingCount,
+      icon: <HourglassEmptyIcon fontSize="large" color="warning" />,
+    },
+    {
+      label: "Applied Applications",
+      value: stats.appliedCount,
+      icon: <CheckCircleIcon fontSize="large" color="success" />,
+    },
+    {
+      label: "Total Spending",
+      value: `$${stats.totalSpending}`,
+      icon: <MonetizationOnIcon fontSize="large" color="secondary" />,
+    },
+  ];
+
+  return (
+    <AppTheme
+      {...props}
+      themeComponents={{
+        ...chartsCustomizations,
+        ...dataGridCustomizations,
+        ...datePickersCustomizations,
+        ...treeViewCustomizations,
+      }}
+    >
+      <CssBaseline enableColorScheme />
+      <Box sx={{ display: "flex" }}>
+        <SideMenu />
+        <AppNavbar />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+         
+            overflow: "auto",
+          }}
+        >
+          <Box sx={{ mx: 3, mt: { xs: 8, md: 0 }, pb: 5 }}>
+            <Header />
+
+            {/* Welcome + Action */}
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              my={4}
+            >
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Avatar
+                  src={
+                    user?.profile_image_url
+                      ? `${API_URL}${user.profile_image_url}`
+                      : undefined
+                  }
+                >
+                  {!user?.profile_image_url && user?.name
+                    ? user.name[0].toUpperCase()
+                    : null}
+                </Avatar>
+                <Box>
+                  <Typography variant="h5">
+                    Good day, {user?.name || "User"}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Here’s what’s happening with your account
+                  </Typography>
+                </Box>
+              </Stack>
+              <Button variant="contained" onClick={() => navigate("/jobs")} startIcon={<AddCircleOutlineIcon />}>
+                Find New Jobs
+              </Button>
+            </Stack>
+
+            {/* Dynamic Stats */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 4 }}>
+              {cardStats.map((s) => (
+                <Card
+                  key={s.label}
+                  sx={{
+                    flex: "1 1 calc(25% - 24px)",
+                    minWidth: 200,
+                    boxShadow: 3,
+                    borderRadius: 2,
+                  }}
+                >
+                  <CardContent>
+                    <Stack spacing={1} alignItems="center">
+                      {s.icon}
+                      <Typography color="text.secondary">{s.label}</Typography>
+                      <Typography variant="h4" fontWeight="bold">
+                        {s.value}
+                      </Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+
+            {/* Recent Payments */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Recent Payments
+              </Typography>
+              {loading ? (
+                <Typography>Loading…</Typography>
+              ) : payments.length === 0 ? (
+                <Typography color="text.secondary">
+                  No payments found.
+                </Typography>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Currency</TableCell>
+                        <TableCell>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {payments.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell>
+                            {new Date(p.created_at).toLocaleString()}
+                          </TableCell>
+                          <TableCell>${p.amount}</TableCell>
+                          <TableCell>{p.currency}</TableCell>
+                          <TableCell>{p.status}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    </AppTheme>
+  );
+}

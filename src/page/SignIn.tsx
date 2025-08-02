@@ -23,7 +23,7 @@ import { baseUrl } from "../api/baseUrl";
 import { useSnack } from "../components/SnackContext";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../redux/authSlice";
-
+import { setUserId } from '../redux/cartSlice'; 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -108,47 +108,51 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
     return isValid;
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!validateInputs()) return;
+ 
+const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  if (!validateInputs()) return;
 
-    setLoading(true);
-    const data = new FormData(event.currentTarget);
-    const user = {
-      email: data.get("email"),
-      password: data.get("password"),
-      remember_me: true,
-    };
-
-    try {
-      const res = await axios.post(`${baseUrl}/login`, user, {
-        withCredentials: true,
-      });
-
-      const userData = res.data.user;
-      const token = res.data.token;
-
-      // Save to redux
-      dispatch(loginSuccess({ user: userData, token }));
-
-      showSnackbar("Login successful!", "success");
-
-      // Role-based redirect (optional)
-      if (userData.user_type === 1) {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (error: any) {
-      const msg = error.response?.data?.message
-        ? `Login failed: ${error.response.data.message}`
-        : "Something went wrong!";
-      showSnackbar(msg, "error");
-    } finally {
-      setLoading(false);
-    }
+  setLoading(true);
+  const data = new FormData(event.currentTarget);
+  const user = {
+    email: data.get("email"),
+    password: data.get("password"),
+    remember_me: true,
   };
 
+  try {
+    const res = await axios.post(`${baseUrl}/login`, user, {
+      withCredentials: true,
+    });
+
+    const userData = res.data.user;
+    const token = res.data.token;
+
+    // Save to redux
+    dispatch(loginSuccess({ user: userData, token }));
+
+    // 👇👇 Add these two lines:
+    dispatch(setUserId(userData.id.toString()));
+    localStorage.setItem('currentUserId', userData.id.toString());
+
+    showSnackbar("Login successful!", "success");
+
+    // Role-based redirect (optional)
+    if (userData.user_type === 1) {
+      navigate("/dashboard");
+    } else {
+      navigate("/home");
+    }
+  } catch (error: any) {
+    const msg = error.response?.data?.message
+      ? `Login failed: ${error.response.data.message}`
+      : "Something went wrong!";
+    showSnackbar(msg, "error");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <AppTheme {...props}>
       <CssBaseline enableColorScheme />

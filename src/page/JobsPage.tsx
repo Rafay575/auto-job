@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Stack,
@@ -20,7 +20,9 @@ import Header from '../components/Header';
 import JobsCardList from '../components/JobsList';
 
 import { alpha } from '@mui/material/styles';
-import { jobs, type Job } from '../data/dummy_jobs';
+import axios from 'axios';
+import { baseUrl } from '../api/baseUrl';
+import type { Job } from '../types';
 
 import {
   chartsCustomizations,
@@ -37,26 +39,63 @@ const xThemeComponents2 = {
 };
 
 export default function JobsPage(props: { disableCustomTheme?: boolean }) {
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  const filteredJobs = jobs.filter((job) =>
-    job.title.toLowerCase().includes(search.toLowerCase()) ||
-    job.company.toLowerCase().includes(search.toLowerCase()) ||
-    job.location.toLowerCase().includes(search.toLowerCase())
-  );
+  // LinkedIn-style Filters
+  
+  const [filterType, setFilterType] = useState('');
+  const [filterExperience, setFilterExperience] = useState('');
+  const [filterRemote, setFilterRemote] = useState('');
 
+  useEffect(() => {
+    axios
+      .get<Job[]>(`${baseUrl}/jobs/all`)
+      .then((res) => setJobs(res.data))
+      .catch((err) => {
+        console.error('Failed to fetch jobs:', err);
+        setJobs([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Unique filter options from jobs data
+  const typeOptions = Array.from(new Set(jobs.map(j => j.contract_type))).filter(Boolean);
+  const experienceOptions = Array.from(new Set(jobs.map(j => j.experience_level))).filter(Boolean);
+
+  // Filtering logic
+  const filteredJobs = jobs.filter(job => {
+    return (
+     
+      (filterType === '' || job.contract_type === filterType) &&
+      (filterExperience === '' || job.experience_level === filterExperience) &&
+      (filterRemote === '' ||
+        (filterRemote === 'Remote'
+          ? job.location.toLowerCase().includes('remote')
+          : !job.location.toLowerCase().includes('remote'))) &&
+      (
+        job.title.toLowerCase().includes(search.toLowerCase()) ||
+        job.company_name.toLowerCase().includes(search.toLowerCase()) ||
+        job.location.toLowerCase().includes(search.toLowerCase()) ||
+        (job.sector && job.sector.toLowerCase().includes(search.toLowerCase()))
+      )
+    );
+  });
+
+  // Pagination
   const totalPages = Math.ceil(filteredJobs.length / entriesPerPage);
   const paginatedJobs = filteredJobs.slice(
     (page - 1) * entriesPerPage,
     page * entriesPerPage
   );
 
-  // Reset to page 1 when search or entriesPerPage changes
+  // Reset to page 1 when search or entriesPerPage or filters change
   useEffect(() => {
     setPage(1);
-  }, [search, entriesPerPage]);
+  }, [search, entriesPerPage, filterType, filterExperience, filterRemote]);
 
   return (
     <AppTheme {...props} themeComponents={xThemeComponents2}>
@@ -86,7 +125,7 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
           >
             <Header />
 
-            {/* Top Bar: Search and Entries */}
+            {/* Top Bar: LinkedIn Filters + Search */}
             <Box
               sx={{
                 display: 'flex',
@@ -100,13 +139,56 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
                 Available Jobs
               </Typography>
 
-              <Stack direction="row" spacing={2} alignItems="center">
+              <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                {/* Location Filter */}
+               
+                {/* Type Filter */}
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <Select
+                    displayEmpty
+                    value={filterType}
+                    onChange={e => setFilterType(e.target.value)}
+                    renderValue={selected => selected ? selected : 'All Types'}
+                  >
+                    <MenuItem value="">All Types</MenuItem>
+                    {typeOptions.map(type => (
+                      <MenuItem key={type} value={type}>{type}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {/* Experience Level Filter */}
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <Select
+                    displayEmpty
+                    value={filterExperience}
+                    onChange={e => setFilterExperience(e.target.value)}
+                    renderValue={selected => selected ? selected : 'All Experience'}
+                  >
+                    <MenuItem value="">All Experience</MenuItem>
+                    {experienceOptions.map(level => (
+                      <MenuItem key={level} value={level}>{level}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {/* Remote/Onsite Filter */}
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <Select
+                    displayEmpty
+                    value={filterRemote}
+                    onChange={e => setFilterRemote(e.target.value)}
+                    renderValue={selected => selected ? selected : 'Remote/Onsite'}
+                  >
+                    <MenuItem value="">Remote/Onsite</MenuItem>
+                    <MenuItem value="Remote">Remote</MenuItem>
+                    <MenuItem value="Onsite">Onsite</MenuItem>
+                  </Select>
+                </FormControl>
+                {/* Entries Per Page */}
                 <FormControl size="small">
-                 
                   <Select
                     labelId="entries-label"
                     value={entriesPerPage}
-                    onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                    onChange={e => setEntriesPerPage(Number(e.target.value))}
                   >
                     {[5, 10, 25, 50].map((value) => (
                       <MenuItem key={value} value={value}>
@@ -115,12 +197,12 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
                     ))}
                   </Select>
                 </FormControl>
-
+                {/* Search */}
                 <TextField
                   size="small"
                   placeholder="Search jobs..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={e => setSearch(e.target.value)}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -133,7 +215,11 @@ export default function JobsPage(props: { disableCustomTheme?: boolean }) {
             </Box>
 
             {/* Render Filtered + Paginated Jobs */}
-            <JobsCardList jobs={paginatedJobs} />
+            {loading ? (
+              <Typography>Loading...</Typography>
+            ) : (
+              <JobsCardList jobs={paginatedJobs} />
+            )}
 
             {/* Pagination and Count */}
             <Box

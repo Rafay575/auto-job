@@ -10,10 +10,7 @@ import {
   Typography,
   InputAdornment,
   TextField,
-  MenuItem,
-  Pagination,
-  Select,
-  FormControl,
+ 
   
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -39,8 +36,7 @@ const xThemeComponents = {
 
 export default function UsersPage(props: { disableCustomTheme?: boolean }) {
   const [search, setSearch] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [page, setPage] = useState(1);
+ 
 
   return (
     <AppTheme {...props} themeComponents={xThemeComponents}>
@@ -85,21 +81,7 @@ export default function UsersPage(props: { disableCustomTheme?: boolean }) {
               </Typography>
 
               <Stack direction="row" spacing={2} alignItems="center">
-                <FormControl size="small">
-                  <label id="entries-label" >Entries</label>
-                  <Select
-                    labelId="entries-label"
-                    value={entriesPerPage}
-                    label="Entries"
-                    onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                  >
-                    {[5, 10, 25, 50].map((value) => (
-                      <MenuItem key={value} value={value}>
-                        {value} / page
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              
 
                 <TextField
                   size="small"
@@ -118,30 +100,9 @@ export default function UsersPage(props: { disableCustomTheme?: boolean }) {
             </Box>
 
             {/* Users List */}
-            <UsersList />
+            <UsersList search={search}/>
 
-            {/* Pagination Controls */}
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mt: 3,
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                Showing {(page - 1) * entriesPerPage + 1} to{' '}
-                {page * entriesPerPage} of 100 users
-              </Typography>
-
-              <Pagination
-                count={10}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                shape="rounded"
-                color="primary"
-              />
-            </Box>
+       
           </Stack>
         </Box>
       </Box>

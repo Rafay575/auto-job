@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   user_type: number;
+  profile_image_url: string;
   // add more fields if your user object has them
 }
 
@@ -32,12 +33,16 @@ const authSlice = createSlice({
     },
     logout: (state) => {
       state.token = null;
+      state.user = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-    
+    },
+    updateUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      localStorage.setItem('user', JSON.stringify(action.payload));
     },
   },
 });
 
-export const { loginSuccess, logout } = authSlice.actions;
+export const { loginSuccess, logout, updateUser } = authSlice.actions;
 export default authSlice.reducer;

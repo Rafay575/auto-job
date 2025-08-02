@@ -1,5 +1,4 @@
-// src/pages/AccountSettings.tsx
-import React from 'react';
+import React from "react";
 import {
   Box,
   Card,
@@ -7,171 +6,239 @@ import {
   Typography,
   Divider,
   Stack,
-  TextField,
+  Input,
   Button,
-  Tabs,
-  Tab,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Chip,
-} from '@mui/material';
-import AppTheme from '../theme/AppTheme';
 
-export default function AccountComponent({ disableCustomTheme }: { disableCustomTheme?: boolean }) {
-  // — your real data source here —
-  const appliedJobs = [
-    { id: 1, title: 'Front-end Developer', company: 'Acme Co.',   date: '2025-06-05', status: 'applied', type: 'quick'  },
-    { id: 2, title: 'UI/UX Designer',     company: 'Beta Ltd.',  date: '2025-06-12', status: 'pending', type: 'smart'  },
-    { id: 3, title: 'Backend Engineer',   company: 'Gamma Inc.', date: '2025-06-20', status: 'applied', type: 'manual' },
-    // …
-  ];
+  FormHelperText,
+} from "@mui/material";
+import AppTheme from "../theme/AppTheme";
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import { baseUrl } from "../api/baseUrl";
+import { useSnack } from "../components/SnackContext";
+import { useDispatch, useSelector } from "react-redux";
+import { loginSuccess } from "../redux/authSlice";
+import { useNavigate } from "react-router-dom";
+export default function AccountComponent({
+  disableCustomTheme,
+}: {
+  disableCustomTheme?: boolean;
+}) {
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm();
+  const {
+    register: registerPw,
+    handleSubmit: handlePwSubmit,
+    reset: resetPw,
+    formState: { errors: pwErrors },
+  } = useForm();
+  const navigate = useNavigate();
 
-  // — dollars spent per type —
-  const billingAmounts = { quick: 5, smart: 10, manual: 15 };
-  const totalSpend = billingAmounts.quick + billingAmounts.smart + billingAmounts.manual;
+  const token = useSelector((state: any) => state.auth.token);
+  const { showSnackbar } = useSnack();
 
-  // — counts for tabs —
-  const totalCount  = appliedJobs.length;
-  const quickCount  = appliedJobs.filter(j => j.type === 'quick').length;
-  const smartCount  = appliedJobs.filter(j => j.type === 'smart').length;
-  const manualCount = appliedJobs.filter(j => j.type === 'manual').length;
+  React.useEffect(() => {
+    axios
+      .get(`${baseUrl}/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const { name, email, phone } = res.data.data;
+        setValue("name", name);
+        setValue("email", email);
+        setValue("phone", phone);
+      });
+  }, []);
+const dispatch = useDispatch();
 
-  // — tab state for filtering —
-  const [filter, setFilter] = React.useState<'all'|'quick'|'smart'|'manual'>('all');
-  const handleTab = (_: any, v: any) => setFilter(v);
-  const filteredJobs = filter === 'all'
-    ? appliedJobs
-    : appliedJobs.filter(j => j.type === filter);
+const onSubmitProfile = (data: any) => {
+  axios
+    .put(`${baseUrl}/profile`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => {
+      showSnackbar("Profile updated", "success");
+      if (res.data?.success && res.data.user) {
+        // dispatch(loginSuccess(res.data.user));
+          dispatch(loginSuccess({ user: res.data.user, token }));
+          navigate('/home');
+      }
+    })
+    .catch(() => showSnackbar("Update failed", "error"));
+};
+
+  const onChangePassword = (data: any) => {
+    if (data.newPassword !== data.confirmPassword) {
+      return showSnackbar("Passwords do not match", "error");
+    }
+    axios
+      .put(
+        `${baseUrl}/change-password`,
+        {
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then(() => {
+        showSnackbar("Password updated", "success");
+        resetPw();
+      })
+      .catch(() => showSnackbar("Password update failed", "error"));
+  };
+
+
 
   return (
     <AppTheme disableCustomTheme={disableCustomTheme}>
-      <Box sx={{ p: 2, mx: 'auto', maxWidth: 1200 }}>
-
-        {/* ── Profile & Change Password ── */}
-        <Box display="flex" flexWrap="wrap" gap={2} mb={4}>
-          <Box sx={{ width: { xs: '100%', lg: '49%' } }}>
+      <Box sx={{ p: 2, mx: "auto"}}>
+        <Box display="flex" flexWrap="wrap" gap={2} mb={4 }>
+          <Box sx={{ width: { xs: "100%", lg: "49%" },height: "100%" }}>
             <Card sx={{ borderRadius: 1, boxShadow: 4 }}>
               <CardContent>
                 <Typography variant="h5" color="primary" gutterBottom>
                   Profile Information
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-                <Stack spacing={2}>
-                  <TextField label="Full Name" defaultValue="Ali Hassan" fullWidth />
-                  <TextField label="Email Address" type="email" defaultValue="ali.hassan@example.com" fullWidth />
-                  <TextField label="Phone Number" defaultValue="+92 300 123 4567" fullWidth />
-                </Stack>
-                <Box mt={3} textAlign="right">
-                  <Button variant="contained">Save Profile</Button>
-                </Box>
+                <form onSubmit={handleSubmit(onSubmitProfile)}>
+                  <Stack spacing={2}>
+                    <Input
+                      placeholder="Full Name"
+                      fullWidth
+                      {...register("name", {
+                        required: "Name is required",
+                        minLength: {
+                          value: 4,
+                          message: "Minimum 4 characters",
+                        },
+                      })}
+                    />
+                    {errors.name?.message && (
+                      <FormHelperText error>
+                        {String(errors.name.message)}
+                      </FormHelperText>
+                    )}
+
+                    <Input
+                      placeholder="Email Address"
+                      fullWidth
+                      type="email"
+                      {...register("email", {
+                        required: "Email is required",
+                        pattern: {
+                          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                          message: "Invalid email",
+                        },
+                      })}
+                    />
+                    {errors.email?.message && (
+                      <FormHelperText error>
+                        {String(errors.email.message)}
+                      </FormHelperText>
+                    )}
+
+                    <Input
+                      placeholder="Phone Number"
+                      fullWidth
+                      {...register("phone", {
+                        required: "Phone number is required",
+                        pattern: {
+                          value: /^(\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}$/
+,
+                          message: "Enter valid UK phone number",
+                        },
+                      })}
+                    />
+                    {errors.phone?.message && (
+                      <FormHelperText error>
+                        {String(errors.phone.message)}
+                      </FormHelperText>
+                    )}
+                  </Stack>
+                  <Box mt={3} textAlign="right">
+                    <Button variant="outlined" type="submit">
+                      Save Profile
+                    </Button>
+                  </Box>
+                </form>
               </CardContent>
             </Card>
           </Box>
 
-          <Box sx={{ width: { xs: '100%', lg: '49%' } }}>
+          <Box sx={{ width: { xs: "100%", lg: "49%" }, height: "100%" }}>
             <Card sx={{ borderRadius: 1, boxShadow: 4 }}>
               <CardContent>
                 <Typography variant="h5" color="primary" gutterBottom>
                   Change Password
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-                <Stack spacing={2}>
-                  <TextField label="Current Password" type="password" fullWidth />
-                  <TextField label="New Password" type="password" fullWidth />
-                  <TextField label="Confirm New Password" type="password" fullWidth />
-                </Stack>
-                <Box mt={3} textAlign="right">
-                  <Button variant="contained">Update Password</Button>
-                </Box>
+                <form onSubmit={handlePwSubmit(onChangePassword)}>
+                  <Stack spacing={2}>
+                    <Input
+                      placeholder="Current Password"
+                      type="password"
+                      fullWidth
+                      {...registerPw("currentPassword", {
+                        required: "Current password required",
+                      })}
+                    />
+                    {pwErrors.currentPassword?.message && (
+                      <FormHelperText error>
+                        {String(pwErrors.currentPassword.message)}
+                      </FormHelperText>
+                    )}
+
+                    <Input
+                      placeholder="New Password"
+                      type="password"
+                      fullWidth
+                      {...registerPw("newPassword", {
+                        required: "New password required",
+                        pattern: {
+                          value:
+                            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                          message:
+                            "Must include upper, lower, number, special character & 8+ chars",
+                        },
+                      })}
+                    />
+                    {pwErrors.newPassword?.message && (
+                      <FormHelperText error>
+                        {String(pwErrors.newPassword.message)}
+                      </FormHelperText>
+                    )}
+
+                    <Input
+                      placeholder="Confirm New Password"
+                      type="password"
+                      fullWidth
+                      {...registerPw("confirmPassword", {
+                        required: "Confirm password required",
+                      })}
+                    />
+                    {pwErrors.confirmPassword?.message && (
+                      <FormHelperText error>
+                        {String(pwErrors.confirmPassword.message)}
+                      </FormHelperText>
+                    )}
+                  </Stack>
+                  <Box mt={3} textAlign="right">
+                    <Button variant="outlined" type="submit">
+                      Update Password
+                    </Button>
+                  </Box>
+                </form>
               </CardContent>
             </Card>
           </Box>
         </Box>
-
-        {/* ── Spending Summary Cards ── */}
-        <Box display="flex" flexWrap="wrap" gap={2} mb={4}>
-          {[
-            { label: 'AI Quick Apply', amount: billingAmounts.quick },
-            { label: 'Smart Apply',    amount: billingAmounts.smart },
-            { label: 'Manual Apply',   amount: billingAmounts.manual },
-            { label: 'Total Spend',    amount: totalSpend },
-          ].map(({ label, amount }) => (
-            <Card key={label} sx={{ flex: 1, minWidth: 180, textAlign: 'center', py: 2 }}>
-              <CardContent>
-                <Typography variant="subtitle1">{label}</Typography>
-                <Typography variant="h4" color="primary">${amount}</Typography>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-
-        {/* ── Tabs to Filter by Type ── */}
-        <Box mb={3}>
-          <Tabs
-            value={filter}
-            onChange={handleTab}
-            textColor="primary"
-            indicatorColor="primary"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab label={`All (${totalCount})`}   value="all"   />
-            <Tab label={`Quick (${quickCount})`} value="quick" />
-            <Tab label={`Smart (${smartCount})`} value="smart" />
-            <Tab label={`Manual (${manualCount})`} value="manual" />
-          </Tabs>
-        </Box>
-
-        {/* ── Filtered Jobs Table ── */}
-        <Card sx={{ borderRadius: 1, boxShadow: 4 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              {filter === 'all'
-                ? `All Jobs (${filteredJobs.length})`
-                : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Jobs (${filteredJobs.length})`}
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Job #</TableCell>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Company</TableCell>
-                  <TableCell>Date Applied</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredJobs.map(job => (
-                  <TableRow key={job.id} hover>
-                    <TableCell>{job.id}</TableCell>
-                    <TableCell>{job.title}</TableCell>
-                    <TableCell>{job.company}</TableCell>
-                    <TableCell>{job.date}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={job.status === 'applied' ? 'Applied' : 'Pending'}
-                        color={job.status === 'applied' ? 'success' : 'warning'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredJobs.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                      No jobs to display.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
+                   
       </Box>
     </AppTheme>
   );

@@ -14,45 +14,44 @@ import { Link } from 'react-router-dom';
 
 const tiers = [
   {
-    title: 'AI Basic',
-    price: '49',
+    title: 'AI-Powered Express',
+    price: '£1.90',
     description: [
-      'Up to 20 automated applications/month',
-      'AI-generated resumes & cover letters',
-      'Auto-form-fill & submission',
-      'Real-time tracking dashboard',
-      'Email support',
+      'Ultra-fast processing',
+      'Apply to multiple roles simultaneously',
+      '24-hour turnaround time',
+      'Cost-effective for large volumes',
+      'Great for internships or remote roles',
     ],
-    buttonText: 'Buy Now',
+    buttonText: 'Select AI-Powered Express',
     buttonVariant: 'outlined',
     buttonColor: 'primary',
   },
   {
-    title: 'Hybrid Pro',
-    subheader: 'Recommended',
-    price: '99',
+    title: 'Hybrid (AI + Human)',
+    price: '£2.90',
     description: [
-      'Up to 20 drafts/month',
-      'AI-generated drafts + human editing',
-      'ATS-optimized cover letters',
-      'Priority email & chat support',
-      '1-on-1 consultation session',
+      'AI-generated drafts',
+      'Human-edited for polish',
+      '24-hour turnaround time',
+      'Balanced quality and speed',
+      'Consistent tone, grammar & structure across applications',
     ],
-    buttonText: 'Buy Now',
+    buttonText: 'Select Hybrid',
     buttonVariant: 'contained',
     buttonColor: 'secondary',
   },
   {
-    title: 'Human Premium',
-    price: '199',
+    title: 'Human-Touch Pro',
+    price: '£3.90',
     description: [
-      'Up to 20 fully custom applications/month',
-      'Expert-written resumes & cover letters',
-      'In-depth company & role research',
-      'Interview prep & coaching guide',
-      'Dedicated account manager',
+      'Fully tailored to each job',
+      'Reviewed by human experts',
+      '24-hour turnaround time',
+      'Includes CV optimisation tips',
+      'Ideal for competitive roles',
     ],
-    buttonText: 'Buy Now',
+    buttonText: 'Select Human-Touch Pro',
     buttonVariant: 'outlined',
     buttonColor: 'primary',
   },
@@ -145,7 +144,7 @@ export default function Pricing() {
                     {tier.title}
                   </Typography>
                   {tier.title === 'Professional' && (
-                    <Chip icon={<AutoAwesomeIcon />} label={tier.subheader} />
+                    <Chip icon={<AutoAwesomeIcon />}  />
                   )}
                 </Box>
                 <Box

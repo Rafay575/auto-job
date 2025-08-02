@@ -13,7 +13,8 @@ import MenuButton from './MenuButton';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice'; // import the logout action
-
+import { useAppSelector } from "../redux/hooks"; 
+import { setUserId } from '../redux/cartSlice'; 
 const MenuItem = styled(MuiMenuItem)({
   margin: '2px 0',
 });
@@ -23,7 +24,8 @@ export default function OptionsMenu() {
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
   const dispatch = useDispatch(); // To dispatch the logout action
-
+const user = useAppSelector((state) => state.auth.user);
+  const userType = user?.user_type;
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -37,6 +39,8 @@ export default function OptionsMenu() {
     
     // Redirect to homepage after logout
     navigate('/');
+    dispatch(setUserId(null));
+localStorage.removeItem('currentUserId');
     dispatch(logout());
   };
 
@@ -69,7 +73,11 @@ export default function OptionsMenu() {
           },
         }}
       >
-        <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
+        {userType === 0 && (
+          <>
+          <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
+          </>
+        )}
         <MenuItem onClick={() => navigate('/account-settings')}>Account Settings</MenuItem>
         <Divider />
         <MenuItem
@@ -81,7 +89,7 @@ export default function OptionsMenu() {
             },
           }}
         >
-          <ListItemText>Logout</ListItemText>
+          <ListItemText sx={{ minWidth: '100px' }}>Logout</ListItemText>
           <ListItemIcon>
             <LogoutRoundedIcon fontSize="small" />
           </ListItemIcon>

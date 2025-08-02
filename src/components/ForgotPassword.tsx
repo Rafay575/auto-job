@@ -34,7 +34,7 @@ export default function ForgotPassword({ open, handleClose }: ForgotPasswordProp
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false); // Toggle confirm password visibility
 // adding speacial character and one capital letter in password must
   // Initialize react-hook-form
-  const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm();
+  const { control, handleSubmit, reset } = useForm();
 
   // Handle continue (forgot password step)
   const handleContinue = async (data: any) => {
@@ -76,28 +76,34 @@ export default function ForgotPassword({ open, handleClose }: ForgotPasswordProp
   };
 
   // Handle reset password step
-  const handleResetPassword = async () => {
-    if (password !== newPassword) {
-      showSnackbar("Passwords do not match", "error");
-      return;
-    }
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()[\]{}\-_+=~`|:;"'<>,.?/\\]).{8,}$/;
 
-    if (password.length < 8) {
-      showSnackbar("Password must be at least 8 characters long", "error");
-      return;
-    }
+const handleResetPassword = async () => {
+  if (password !== newPassword) {
+    showSnackbar("Passwords do not match", "error");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const res = await axios.post(`${baseUrl}/reset-password`, { reset_token: resetToken, new_password: newPassword });
-      showSnackbar(res.data.message, "success");
-      handleClose(); // Close the dialog
-    } catch (error: any) {
-      showSnackbar(error.response?.data?.message || "Password reset failed", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!passwordRegex.test(newPassword)) {
+    showSnackbar(
+      "Password must be at least 8 characters, include one lowercase, one uppercase, and one special character.",
+      "error"
+    );
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const res = await axios.post(`${baseUrl}/reset-password`, { reset_token: resetToken, new_password: newPassword });
+    showSnackbar(res.data.message, "success");
+    handleClose(); // Close the dialog
+  } catch (error: any) {
+    showSnackbar(error.response?.data?.message || "Password reset failed", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Reset the form when dialog is closed
   React.useEffect(() => {

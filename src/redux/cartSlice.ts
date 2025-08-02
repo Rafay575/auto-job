@@ -1,50 +1,81 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Job } from '../data/dummy_jobs';
+import type { Job } from '../types';
 
 export type ApplyType = 'AI' | 'Smart' | 'Manual';
 
-interface CartItem {
+export interface CartItem {
   job: Job;
   applyType: ApplyType;
+  userId: string; // user id as string (can be number if needed)
 }
 
 interface CartState {
   items: CartItem[];
+  userId: string | null;
 }
 
+const getUserId = () => localStorage.getItem('currentUserId') || null;
+
+const loadUserCart = (userId: string | null): CartItem[] => {
+  const stored = localStorage.getItem('jobCart');
+  if (!stored) return [];
+  const allItems: CartItem[] = JSON.parse(stored);
+  return allItems.filter(item => item.userId === userId);
+};
+
+const initialUserId = getUserId();
+
 const initialState: CartState = {
-  items: JSON.parse(localStorage.getItem('jobCart') || '[]'),
+  items: loadUserCart(initialUserId),
+  userId: initialUserId,
+};
+
+const saveUserCart = (userId: string | null, items: CartItem[]) => {
+  if (!userId) return;
+  const stored = localStorage.getItem('jobCart');
+  let allItems: CartItem[] = stored ? JSON.parse(stored) : [];
+  // Remove this user's items
+  allItems = allItems.filter(item => item.userId !== userId);
+  // Add back this user's updated cart
+  allItems = [...allItems, ...items];
+  localStorage.setItem('jobCart', JSON.stringify(allItems));
 };
 
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addToCart: (state, action: PayloadAction<CartItem>) => {
+    setUserId: (state, action: PayloadAction<string | null>) => {
+      state.userId = action.payload;
+      state.items = loadUserCart(action.payload);
+    },
+    addToCart: (state, action: PayloadAction<Omit<CartItem, 'userId'>>) => {
+      if (!state.userId) return;
       const exists = state.items.find(item => item.job.id === action.payload.job.id);
       if (!exists) {
-        state.items.push(action.payload);
-        localStorage.setItem('jobCart', JSON.stringify(state.items));
+        const newItem: CartItem = { ...action.payload, userId: state.userId };
+        state.items.push(newItem);
+        saveUserCart(state.userId, state.items);
       }
     },
     removeFromCart: (state, action: PayloadAction<number>) => {
+      if (!state.userId) return;
       state.items = state.items.filter(item => item.job.id !== action.payload);
-      localStorage.setItem('jobCart', JSON.stringify(state.items));
+      saveUserCart(state.userId, state.items);
     },
     clearCart: (state) => {
+      if (!state.userId) return;
       state.items = [];
-      localStorage.removeItem('jobCart');
+      saveUserCart(state.userId, []);
     },
     loadCartFromStorage: (state) => {
-      const stored = localStorage.getItem('jobCart');
-      if (stored) {
-        state.items = JSON.parse(stored);
-      }
+      state.items = loadUserCart(state.userId);
     },
   },
 });
 
 export const {
+  setUserId,
   addToCart,
   removeFromCart,
   clearCart,

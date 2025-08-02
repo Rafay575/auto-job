@@ -9,7 +9,7 @@ import MenuContent from "./MenuContent";
 import OptionsMenu from "./OptionsMenu";
 import Sitemark from "./SitemarkIcon";
 const drawerWidth = 240;
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import {  useAppSelector } from "../redux/hooks";
 
 const Drawer = styled(MuiDrawer)({
   width: drawerWidth,
@@ -24,7 +24,6 @@ const Drawer = styled(MuiDrawer)({
 
 export default function SideMenu() {
   const user = useAppSelector((state) => state.auth.user);
-  const dispatch = useAppDispatch();
   return (
     <Drawer
       variant="permanent"
