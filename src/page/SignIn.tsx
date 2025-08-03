@@ -6,7 +6,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "@mui/material/FormControl";
-import Link from "@mui/material/Link";
+import { Link } from 'react-router-dom';
+
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
@@ -227,14 +228,14 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                 control={<Checkbox value="remember" color="primary" />}
                 label="Remember me"
               />
-              <Link
-                component="button"
-                type="button"
+              <div
+              
+              
                 onClick={handleClickOpen}
-                variant="body2"
+              
               >
                 Forgot your password?
-              </Link>
+              </div>
             </Box>
 
             <Button
@@ -255,7 +256,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography sx={{ textAlign: "center" }}>
               Don't have an account?{" "}
-              <Link href="/sign-up" variant="body2">
+              <Link to="/sign-up" >
                 Sign up
               </Link>
             </Typography>
